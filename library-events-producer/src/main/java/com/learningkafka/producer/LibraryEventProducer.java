@@ -33,7 +33,7 @@ public class LibraryEventProducer {
                 ex -> handleFail(key, value, ex));
     }
 
-    public void sendEventUsingProducerRecord(LibraryEvent libraryEvent) throws JsonProcessingException {
+    public ListenableFuture<SendResult<Integer, String>> sendEventUsingProducerRecord(LibraryEvent libraryEvent) throws JsonProcessingException {
         Integer key = libraryEvent.getId();
         String value = objectMapper.writeValueAsString(libraryEvent);
 
@@ -43,6 +43,7 @@ public class LibraryEventProducer {
         listenableFuture.addCallback(
                 result -> handleSuccess(key, value, result),
                 ex -> handleFail(key, value, ex));
+        return listenableFuture;
     }
 
     private ProducerRecord<Integer, String> buildProducerRecord(String topic, Integer key, String value) {
