@@ -2,7 +2,6 @@ package com.learningkafka.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.learningkafka.domain.Book;
 import com.learningkafka.domain.LibraryEvent;
 import com.learningkafka.domain.LibraryEventType;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -57,15 +56,7 @@ class LibraryEventsControllerITTest {
 
     @Test
     void createLibraryEvent() throws JsonProcessingException {
-        Book book = Book.builder()
-                .id(123)
-                .author("John")
-                .name("Kafka using Spring Boot")
-                .build();
-
-        LibraryEvent libraryEvent = LibraryEvent.builder()
-                .book(book)
-                .build();
+        LibraryEvent libraryEvent = LibraryEventFactory.createLibraryEvent();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
