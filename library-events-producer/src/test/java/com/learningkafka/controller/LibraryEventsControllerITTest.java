@@ -71,4 +71,24 @@ class LibraryEventsControllerITTest {
         assertThat(libraryEventFromKafka.getEventType()).isEqualTo(LibraryEventType.NEW);
         assertThat(libraryEventFromKafka.getBook()).isEqualTo(libraryEvent.getBook());
     }
+
+    @Test
+    void updateLibraryEvent() throws JsonProcessingException {
+        LibraryEvent libraryEvent = LibraryEventFactory.createLibraryEvent();
+        libraryEvent.setEventType(LibraryEventType.UPDATE);
+        libraryEvent.setId(111);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<LibraryEvent> request = new HttpEntity<>(libraryEvent, headers);
+
+        ResponseEntity<LibraryEvent> responseEntity = testRestTemplate.exchange("/v1/libraryevent", HttpMethod.PUT, request, LibraryEvent.class);
+        ConsumerRecord<Integer, String> record = KafkaTestUtils.getSingleRecord(consumer, "library-events");
+        String value = record.value();
+        LibraryEvent libraryEventFromKafka = mapper.readValue(value, LibraryEvent.class);
+
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(libraryEventFromKafka.getEventType()).isEqualTo(LibraryEventType.UPDATE);
+        assertThat(libraryEventFromKafka).isEqualTo(libraryEvent);
+    }
 }
