@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.Objects;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,7 +29,13 @@ public class LibraryEventsController {
     }
 
     @PutMapping("/v1/libraryevent")
-    public ResponseEntity<LibraryEvent> updateLibraryEvent(@RequestBody @Valid LibraryEvent libraryEvent) {
+    public ResponseEntity<LibraryEvent> updateLibraryEvent(@RequestBody @Valid LibraryEvent libraryEvent) throws JsonProcessingException {
+        if (Objects.isNull(libraryEvent.getId())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        libraryEvent.setEventType(LibraryEventType.UPDATE);
+        libraryEventProducer.sendEventUsingProducerRecord(libraryEvent);
         return ResponseEntity.ok(libraryEvent);
     }
 }
