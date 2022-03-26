@@ -23,11 +23,13 @@ import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -112,5 +114,39 @@ class LibraryEventsConsumerIT {
         LibraryEvent persistedLibraryEvent = libraryEventsRepository.findById(libraryEvent.getId()).orElse(null);
 
         assertThat(persistedLibraryEvent.getBook().getName()).isEqualTo("Kafka using Spring boot 2.x");
+    }
+
+    @Test
+    void publishModifyLibraryEvent_Not_A_Valid_LibraryEventId() throws JsonProcessingException, InterruptedException, ExecutionException {
+        //given
+        Integer libraryEventId = 123;
+        String json = "{\"id\":" + libraryEventId + ",\"eventType\":\"UPDATE\",\"book\":{\"id\":456,\"name\":\"Kafka Using Spring Boot\",\"author\":\"Dilip\"}}";
+        System.out.println(json);
+        kafkaTemplate.send("library-events" ,libraryEventId, json).get();
+        //when
+        CountDownLatch latch = new CountDownLatch(1);
+        latch.await(3, TimeUnit.SECONDS);
+
+
+        verify(libraryEventsConsumerSpy, times(1)).onMessage(isA(ConsumerRecord.class));
+        verify(libraryEventsServiceSpy, times(1)).processLibraryEvent(isA(ConsumerRecord.class));
+
+        Optional<LibraryEvent> libraryEventOptional = libraryEventsRepository.findById(libraryEventId);
+        assertFalse(libraryEventOptional.isPresent());
+    }
+
+    @Test
+    void publishModifyLibraryEvent_Null_LibraryEventId() throws JsonProcessingException, InterruptedException, ExecutionException {
+        //given
+        Integer libraryEventId = null;
+        String json = "{\"id\":" + libraryEventId + ",\"eventType\":\"UPDATE\",\"book\":{\"id\":456,\"name\":\"Kafka Using Spring Boot\",\"author\":\"Nick\"}}";
+        kafkaTemplate.send("library-events", libraryEventId, json).get();
+        //when
+        CountDownLatch latch = new CountDownLatch(1);
+        latch.await(3, TimeUnit.SECONDS);
+
+
+        verify(libraryEventsConsumerSpy, times(1)).onMessage(isA(ConsumerRecord.class));
+        verify(libraryEventsServiceSpy, times(1)).processLibraryEvent(isA(ConsumerRecord.class));
     }
 }
